@@ -21,7 +21,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 
 # ---------------------------------------------------------------------------
-#  Helpers ------------------------------------------------------------------
+#  Graphique ------------------------------------------------------------------
 # ---------------------------------------------------------------------------
 
 try:
@@ -54,7 +54,7 @@ def horizontal_layout(graph):
 
 
 # ---------------------------------------------------------------------------
-#  Load user data -----------------------------------------------------------
+#  Table de correspondance -----------------------------------------------------------
 # ---------------------------------------------------------------------------
 
 automates = {
@@ -321,7 +321,7 @@ automates = {
 
 
 # ---------------------------------------------------------------------------
-#  Matplotlib canvas --------------------------------------------------------
+#  Canvas Matplotlib --------------------------------------------------------
 # ---------------------------------------------------------------------------
 
 class GraphCanvas(FigureCanvas):
@@ -341,7 +341,7 @@ class GraphCanvas(FigureCanvas):
 
         pos = horizontal_layout(G)
 
-        # Node colors ------------------------------------------------------
+        # Couleurs des noeuds ------------------------------------------------------
         node_colors = []
         for n in G.nodes():
             if n == current:
@@ -353,7 +353,7 @@ class GraphCanvas(FigureCanvas):
             else:
                 node_colors.append("lightgray")
 
-        # Edge labels ------------------------------------------------------
+        # Nom des aretes ------------------------------------------------------
         edge_labels = {
             (u, v): ", ".join(sorted({d["label"] for d in G.get_edge_data(u, v).values()}))
             for u, v in G.edges()
@@ -369,7 +369,7 @@ class GraphCanvas(FigureCanvas):
             node_size=900,
             edgecolors="black",
         )
-        # Label with the *action* description just under the state name -----
+        # Description des labels avec le nom des actions -----
         full_labels = {n: f"{n}\n{states[n]['action']}" for n in G.nodes()}
         nx.draw_networkx_labels(G, pos, labels=full_labels, ax=self.ax, font_size=7)
         nx.draw_networkx_edges(
@@ -386,7 +386,7 @@ class GraphCanvas(FigureCanvas):
 
 
 # ---------------------------------------------------------------------------
-#  Main window --------------------------------------------------------------
+#  Fênetre principale --------------------------------------------------------------
 # ---------------------------------------------------------------------------
 
 class MainWindow(QMainWindow):
@@ -409,7 +409,7 @@ class MainWindow(QMainWindow):
         self.transition_list.itemClicked.connect(self.on_transition_click)
         self.transition_list.setEnabled(False)
 
-        # Left panel -------------------------------------------------------
+        # Layout de gauche -------------------------------------------------------
         left_layout = QVBoxLayout()
         left_layout.addWidget(QLabel("Sélection de la tâche :"))
         left_layout.addWidget(self.task_combo)
@@ -423,7 +423,7 @@ class MainWindow(QMainWindow):
         left_widget = QWidget()
         left_widget.setLayout(left_layout)
 
-        # Graph panel ------------------------------------------------------
+        # Layout des graphes matplotlib ------------------------------------------------------
         self.graph_canvas = GraphCanvas()
 
         splitter = QSplitter(Qt.Horizontal)
@@ -436,36 +436,36 @@ class MainWindow(QMainWindow):
         central.layout().addWidget(splitter)
         self.setCentralWidget(central)
 
-        # Simulation state -------------------------------------------------
-        self.states = {}  # Will hold the automate for the *selected* task
+        # Simulation de l'état -------------------------------------------------
+        self.states = {}  
         self.current_state: str | None = None
         self.final_states: set[str] = set()
         self.visited: set[str] = set()
 
-        # Draw an empty placeholder
+        # Donne une action vide à l'automate au départ
         self.graph_canvas.draw_automate({}, "", set(), set())
 
     # ---------------------------------------------------------------------
-    #  Simulation logic ----------------------------------------------------
+    #  Logique de simulation ----------------------------------------------------
     # ---------------------------------------------------------------------
 
     def _init_from_task(self, task: str):
-        """Extract states, initial, final for *task*."""
+        """Initialiser l'automate à partir de la tâche sélectionnée."""
         self.states = automates[task]
         self.current_state = next(s for s, info in self.states.items() if info.get("I"))
         self.final_states = {s for s, info in self.states.items() if info.get("F")}
         self.visited = {self.current_state}
 
     def start_simulation(self):
-        # Prepare ----------------------------------------------------------
+        # Preparation ----------------------------------------------------------
         task = self.task_combo.currentText()
         self._init_from_task(task)
         self.transition_list.clear()
 
-        # Draw initial graph ----------------------------------------------
+        # Dessine le graphe initial ----------------------------------------------
         self.graph_canvas.draw_automate(self.states, self.current_state, self.visited, self.final_states)
 
-        # First step -------------------------------------------------------
+        # Première étape -------------------------------------------------------
         transitions = self.states[self.current_state]["transitions"]
         if not transitions:
             self.statusBar().showMessage("Pas de transitions depuis l’état initial !")
@@ -476,12 +476,12 @@ class MainWindow(QMainWindow):
             self.apply_event(first_event)
             self.transition_list.setEnabled(True)
         else:
-            # Manual – let the user pick
+            # Mode manuel : on affiche la liste des événements possibles
             self.populate_transition_list(sorted(transitions))
             self.transition_list.setEnabled(True)
 
     # ------------------------------------------------------------------
-    #  UI helpers -------------------------------------------------------
+    #  Aide IU -------------------------------------------------------
     # ------------------------------------------------------------------
 
     def populate_transition_list(self, events: list[str]):
@@ -496,7 +496,7 @@ class MainWindow(QMainWindow):
         self.apply_event(ev)
 
     # ------------------------------------------------------------------
-    #  Core transition --------------------------------------------------
+    #  Transitions --------------------------------------------------
     # ------------------------------------------------------------------
 
     def apply_event(self, event: str):
@@ -524,7 +524,7 @@ class MainWindow(QMainWindow):
 
 
 # ---------------------------------------------------------------------------
-#  Run ----------------------------------------------------------------------
+#  Utilisation --------------------------------------------------------------
 # ---------------------------------------------------------------------------
 
 def main():
